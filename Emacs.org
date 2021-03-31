@@ -1,0 +1,1053 @@
+#+title: Emacs Configuration
+#+STARTUP: content
+#+PROPERTY: header-args:emacs-lisp :noweb yes :tangle ~/.emacs.d/init.el 
+
+* startup performance
+  #+begin_src emacs-lisp
+    ;; The default is 800 kilobytes.  Measured in bytes.
+    (setq gc-cons-threshold (* 40 1000 1000))
+
+    ;; Profile emacs startup
+    (add-hook 'emacs-startup-hook
+              (lambda ()
+                (message "*** Emacs loaded in %s with %d garbage collections."
+                         (format "%.2f seconds"
+                                 (float-time
+                                  (time-subtract after-init-time before-init-time)))
+                         gcs-done)))
+  #+end_src
+
+* package management
+  #+begin_src emacs-lisp 
+    (require 'package)
+    ;; (setq package-enable-at-startup nil)
+    (setq package-archives '(("melpa" . "https://melpa.org/packages/")
+                             ("melpa-stable" . "https://stable.melpa.org/packages/")
+                             ("org" . "https://orgmode.org/elpa/")
+                             ("elpa" . "https://elpa.gnu.org/packages/")))
+    (package-initialize)
+    (require 'use-package)
+    (setq use-package-always-ensure t)
+  #+end_src
+
+* startup packages
+  #+begin_src emacs-lisp
+    (use-package diminish)
+  #+end_src
+
+* tweaks
+** indent style
+   소스코드 작성시, 들여쓰기에 TAB 을 쓰지않는다. TAB 대신 SPACE 가 쓰인다.
+   #+begin_src emacs-lisp
+     (setq-default indent-tabs-mode nil)
+   #+end_src
+
+** async shell command
+   #+begin_src emacs-lisp 
+     (add-to-list 'display-buffer-alist
+       (cons "\\*Async Shell Command\\*.*" (cons #'display-buffer-no-window nil)))
+   #+end_src
+
+** mac 키보드 설정
+   #+begin_src emacs-lisp
+     ;;; I prefer cmd key for meta
+     (setq mac-option-key-is-meta nil
+           mac-command-key-is-meta t
+           mac-command-modifier 'meta
+           mac-option-modifier 'super
+           mac-function-modifier 'hyper)
+     (setq mac-pass-command-to-system nil)
+
+     ;; windmove 단축키
+     (global-set-key (kbd "<H-left>") 'windmove-left)
+     (global-set-key (kbd "<H-right>") 'windmove-right)
+     (global-set-key (kbd "<H-up>") 'windmove-up)
+     (global-set-key (kbd "<H-down>") 'windmove-down)
+   #+end_src
+
+** 한글 파일명 자소분리 - 픽스
+   #+begin_src emacs-lisp
+     (require 'ucs-normalize)
+     (set-file-name-coding-system 'utf-8-hfs)
+     (setq default-process-coding-system '(utf-8-hfs . utf-8-hfs))
+
+   #+end_src
+
+** info directory 
+   #+begin_src emacs-lisp
+     (add-to-list 'Info-default-directory-list "~/.emacs.d/info")
+   #+end_src
+   
+* scratch inital messages
+   #+begin_src emacs-lisp
+     (setq initial-scratch-message "")
+   #+end_src
+
+** default tweaks
+   #+BEGIN_SRC emacs-lisp
+     (setq inhibit-startup-screen t)
+     (tool-bar-mode -1)
+     (blink-cursor-mode -1)
+     (defalias 'list-buffers 'ibuffer)
+     (setq ns-command-modifier 'meta
+	   ns-option-modifier 'none)
+     (set-language-environment 'Korean)
+     (prefer-coding-system 'utf-8)
+     (setq neo-default-system-application "open")
+     ;; (fset 'yes-or-no-p 'y-or-n-p)
+     (defalias 'yes-or-no-p 'y-or-n-p)
+     ;; (fset 'yes-or-no-p #'y-or-n-p)
+     ;; (setq dired-deletion-confirmer #'y-or-n-p)
+     (setq-default truncate-lines t)
+     (set-frame-font "D2Coding 18" nil t)
+   #+END_SRC
+
+** disable line numbers for some modes
+   #+begin_src emacs-lisp
+     (dolist (mode '(org-mode-hook
+		     term-mode-hook
+		     eshell-mode-hook))
+       (add-hook mode (lambda () (display-line-numbers-mode -1))))
+   #+end_src
+
+** column-number-mode
+   #+begin_src emacs-lisp
+     (column-number-mode t)
+     (global-display-line-numbers-mode t)
+   #+end_src
+
+** hl-mode
+   #+BEGIN_SRC emacs-lisp
+     ;; (setq bloomycat/do-nothing nil)
+     (use-package hl-line
+       :config (global-hl-line-mode 1)
+       :custom-face
+       ;; (hl-line ((t (:background "goldenrod1" :box (:line-width 1 :color "Black" :style released-button)))))
+       (hl-line ((t (:background "light blue" )))))
+   #+END_SRC
+
+** 단축키
+   #+begin_src emacs-lisp
+     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+     ;; 단축키
+     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+     ;; (global-unset-key (kbd "<f9>"))
+     ;; (global-set-key [f5] 'w3m)
+     (global-set-key (kbd "C-M-j") 'counsel-switch-buffer)
+     (global-set-key [f6] 'eshell)
+     ;; (global-set-key [f7] 'emms)
+     ;; (global-set-key [f8] 'switch-to-buffer-scratch)
+     (global-set-key (kbd "<f10>") 'org-store-link)
+     ;; (global-set-key [f9] 'switch-to-buffer-newticker)
+     ;; (define-key global-map (kbd "<f9>") (lambda () 
+     ;; 				      (interactive) 
+     ;; 				      (deft)				      
+     ;; 				      (deft-refresh)
+     ;; 				      (deft)))
+     ;; (global-set-key [f12] '(lambda() (interactive) (select-window (next-window))))
+     ;; (global-set-key (kbd "C-<f10>") '(lambda() (interactive) (select-window (next-window))))
+     ;; (global-set-key (kbd "C-<f9>") '(lambda() (interactive) (select-window (previous-window))))
+     ;; (global-set-key [f11] 'next-buffer)
+     ;; (global-set-key (kbd "M-<f12>") 'switch-to-previous-buffer)
+
+   #+end_src
+   
+** cursor color - 한글:빨강, 영어:검정
+   #+BEGIN_SRC emacs-lisp
+     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+     ;; 커서 색깔을 바꾸다.
+     ;; 영어: 검다
+     ;; 한글: 빨갛다
+     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+     (defun toggle-input-method-color ()
+       "setting color"
+       (interactive)
+       (if (string-equal current-input-method nil)
+	   (set-cursor-color "black")
+	 (set-cursor-color "red")))
+     (add-hook 'post-command-hook 'toggle-input-method-color)
+
+   #+END_SRC
+
+** font - nanumgothiccoding
+   #+BEGIN_SRC emacs-lisp
+     (defun my/fontchange-nanumgothiccoding ()
+       "font change to nanumgothiccoding"
+       (interactive "")
+       (progn
+	 (set-frame-font "Monaco 16" nil t)
+	 (setq face-font-rescale-alist '(("나눔고딕" . 1.2)))
+	 (set-fontset-font t 'hangul (font-spec :name "D2Coding"))
+	 (set-fontset-font "fontset-default" '(#x1100 . #xffdc) '("나눔고딕" . "iso10646-1"))
+	 (set-fontset-font "fontset-default" '(#xe0bc . #xf66e) '("나눔고딕" . "iso10646-1"))))
+
+     (defun my/fontchange-d2coding ()
+       "font change to D2Coding"
+       (interactive "")
+       (progn
+	 (set-frame-font "Monaco 16" nil t)
+	 (setq face-font-rescale-alist '(("D2Coding" . 1.3)))
+	 (set-fontset-font t 'hangul (font-spec :name "D2Coding"))
+	 (set-fontset-font "fontset-default" '(#x1100 . #xffdc) '("D2Coding" . "iso10646-1"))
+	 (set-fontset-font "fontset-default" '(#xe0bc . #xf66e) '("D2Coding" . "iso10646-1"))))
+
+     (defun my/fontchange-menlo ()
+       "font change to Menlo"
+       (interactive "")
+       (set-frame-font "Menlo 15" nil t))
+
+     (defun my/fontchange-d2coding ()
+       "font change to Menlo"
+       (interactive "")
+       (set-frame-font "D2Coding 14" nil t))
+
+     (defun my/fontchange-sandol ()
+       "font change to Apple SD 산돌고딕 Neo"
+       (interactive "")
+       (setq-default line-spacing 1)
+       (set-face-font 'default "Menlo-12")
+       (set-frame-font t 'hangul (font-spec :name "나눔고딕코딩"))
+       (setq face-font-rescale-alist
+	     '(
+	       (".*Apple SD Gothic Neo.*" . 1.4)
+	       (".*NanumGothicCoding.*" . 1.2)
+	       (".*PT Mono.*" . 1.2)
+	       (".*나눔고딕.*" . 1.2))))
+   #+END_SRC
+
+** window size/position
+   #+BEGIN_SRC emacs-lisp
+     (setq bloomycat/do-nothing nil)
+     ;; (when (window-system)
+     ;;    (set-frame-height (selected-frame) 12)
+     ;;    (set-frame-width (selected-frame) 110)
+     ;;    (set-frame-position (selected-frame) 1000 930))
+   #+END_SRC
+
+** window split toggle - 수평/수직 분할 토글
+   #+begin_src emacs-lisp
+     (defun toggle-window-split ()
+       (interactive)
+       (if (= (count-windows) 2)
+	   (let* ((this-win-buffer (window-buffer))
+		  (next-win-buffer (window-buffer (next-window)))
+		  (this-win-edges (window-edges (selected-window)))
+		  (next-win-edges (window-edges (next-window)))
+		  (this-win-2nd (not (and (<= (car this-win-edges)
+					      (car next-win-edges))
+					  (<= (cadr this-win-edges)
+					      (cadr next-win-edges)))))
+		  (splitter
+		   (if (= (car this-win-edges)
+			  (car (window-edges (next-window))))
+		       'split-window-horizontally
+		     'split-window-vertically)))
+	     (delete-other-windows)
+	     (let ((first-win (selected-window)))
+	       (funcall splitter)
+	       (if this-win-2nd (other-window 1))
+	       (set-window-buffer (selected-window) this-win-buffer)
+	       (set-window-buffer (next-window) next-win-buffer)
+	       (select-window first-win)
+	       (if this-win-2nd (other-window 1))))))
+
+     (define-key ctl-x-4-map "t" 'toggle-window-split)
+   #+end_src
+
+** 윈도우 이동 - f12
+   #+begin_src emacs-lisp
+     (global-set-key (kbd "<f12>") #'next-window-any-frame)
+   #+end_src
+
+** 윈도우 위치 이동 - transpose-frame
+#+BEGIN_SRC emacs-lisp
+  (use-package transpose-frame)
+#+END_SRC
+
+** 윈도우 스왑
+   #+begin_src emacs-lisp
+     (use-package crux)
+     (define-key ctl-x-4-map "T" 'crux-transpose-windows)
+   #+end_src
+
+* disable line numbers for some modes
+  #+begin_src emacs-lisp
+    (dolist (mode '(org-mode-hook
+                    term-mode-hook
+                    vterm-mode-hook
+                    shell-mode-hook
+                    eshell-mode-hook))
+      (add-hook mode (lambda () (display-line-numbers-mode 0))))
+  #+end_src
+
+* cl-format : 숫자에 commas "," 를 붙임
+  #+begin_src emacs-lisp
+    (use-package cl-format
+      :commands eshell/format-commas)
+  #+end_src
+
+* try
+#+BEGIN_SRC emacs-lisp
+  (use-package try)
+#+END_SRC
+
+* which-key
+#+BEGIN_SRC emacs-lisp
+  (use-package which-key
+    :init (which-key-mode)
+    :diminish which-key-mode
+    :config (setq which-key-idle-delay 3))
+#+END_SRC
+
+* tabbar
+#+BEGIN_SRC emacs-lisp
+  (setq bloomycat/do-nothing nil)
+  ;; (use-package tabbar
+  ;;   :config (tabbar-mode 1)
+  ;;   )
+#+END_SRC
+
+* ace-window
+#+BEGIN_SRC emacs-lisp
+  (use-package ace-window
+    :init (global-set-key [remap other-window] 'ace-window)
+    :custom-face
+    (aw-leading-char-face ((t (:inherit ace-jump-face-foreground :height 3.0)))))
+#+END_SRC
+
+* winner-mode
+#+BEGIN_SRC emacs-lisp
+  (use-package winner
+    :config 
+    (winner-mode 1)
+    (windmove-default-keybindings))
+#+END_SRC
+
+* counsel
+#+BEGIN_SRC emacs-lisp
+  (use-package counsel)
+#+END_SRC
+
+* ivy mode
+  #+begin_src emacs-lisp
+    (use-package ivy
+      :diminish ivy-mode
+      :bind (("C-s" . swiper)
+             ;; :map ivy-minibuffer-map
+             ;; ("M-n" . ivy-next-line)
+             ;; ("M-p" . ivy-previous-line)
+             )
+      ;; :hook (ivy-mode-hook . bc/ivy-mode-hook) ;; deprecated
+      :config
+      (setq ivy-use-virtual-buffers t)
+      :init (ivy-mode 1))
+  #+end_src
+
+* ivy-rich mode
+  #+begin_src emacs-lisp
+    (use-package ivy-rich
+      :after ivy
+      :init (ivy-rich-mode 1)
+      ;; :custom
+      ;; (ivy-virtual-abbreviate 'full
+      ;; 			  ivy-rich-switch-buffer-align-virtual-buffer t
+      ;; 			  ivy-rich-path-style 'abbrev)
+      ;; :config
+      ;; (ivy-set-display-transformer 'ivy-switch-buffer
+      ;; 			       'ivy-rich-switch-buffer-transformer)
+      )
+  #+end_src
+  
+* swiper
+  #+BEGIN_SRC emacs-lisp
+    (use-package swiper
+      :config (progn
+		(ivy-mode 1)
+		(setq ivy-use-virtual-buffers t)
+		(setq enable-recursive-minibuffers t)
+		;; enable this if you want `swiper' to use it
+		;; (setq search-default-mode #'char-fold-to-regexp)
+		(global-set-key "\C-s" 'swiper)
+		(global-set-key (kbd "C-c C-r") 'ivy-resume)
+		(global-set-key (kbd "<f6>") 'ivy-resume)
+		(global-set-key (kbd "M-x") 'counsel-M-x)
+		(global-set-key (kbd "C-x C-f") 'counsel-find-file)
+		(global-set-key (kbd "<f1> f") 'counsel-describe-function)
+		(global-set-key (kbd "<f1> v") 'counsel-describe-variable)
+		(global-set-key (kbd "<f1> l") 'counsel-find-library)
+		(global-set-key (kbd "<f2> i") 'counsel-info-lookup-symbol)
+		(global-set-key (kbd "<f2> u") 'counsel-unicode-char)
+		(global-set-key (kbd "C-c g") 'counsel-git)
+		(global-set-key (kbd "C-c j") 'counsel-git-grep)
+		(global-set-key (kbd "C-c k") 'counsel-ag)
+		(global-set-key (kbd "C-x l") 'counsel-locate)
+		(global-set-key (kbd "C-S-o") 'counsel-rhythmbox)
+		(define-key minibuffer-local-map (kbd "C-r") 'counsel-minibuffer-history)
+		))
+  #+END_SRC
+
+* eww-lnum
+#+BEGIN_SRC emacs-lisp
+  (use-package eww-lnum
+    ;; :config
+    ;; (progn (define-key eww-mode-map "f" 'eww-lnum-follow)
+    ;; 	 (define-key eww-mode-map "F" 'eww-lnum-universal))
+    :bind (:map eww-mode-map
+		("f" . eww-lnum-follow)
+		("F" . eww-lnum-universal)))
+#+END_SRC
+
+* auto-complete
+#+BEGIN_SRC emacs-lisp
+  (use-package auto-complete
+    :diminish auto-complete-mode
+    :init (progn
+	    (ac-config-default)
+	    (global-auto-complete-mode t))
+    :bind (:map ac-completing-map
+		("<M-n>" . ac-next)
+		("<M-p>" . ac-previous)))
+#+END_SRC
+
+* org
+  #+begin_src emacs-lisp 
+    (use-package org
+      :ensure org-plus-contrib
+      :defer t
+      :config
+      (setq org-ellipsis " ▾"
+            org-hide-emphasis-markers t
+            org-src-fontify-natively t
+            org-src-tab-acts-natively t
+            org-edit-src-content-indentation 2
+            org-hide-block-startup nil
+            org-src-preserve-indentation nil
+            org-startup-folded 'content
+            org-cycle-separator-lines 2)
+      (add-to-list 'org-src-lang-modes '("eshell" . eshell)))
+  #+end_src
+
+** org-tempo
+   #+begin_src emacs-lisp 
+     (require 'org-tempo)
+
+     (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
+     (add-to-list 'org-structure-template-alist '("sh" . "src shell"))
+     (add-to-list 'org-structure-template-alist '("py" . "src python"))
+
+     (add-to-list 'org-tempo-keywords-alist '("ao" . "attr_org"))
+     (add-to-list 'org-tempo-keywords-alist '("al" . "attr_latex"))
+     (add-to-list 'org-tempo-keywords-alist '("ca" . "caption"))
+     (add-to-list 'org-tempo-keywords-alist '("tn" . "tblname"))
+     (add-to-list 'org-tempo-keywords-alist '("na" . "name"))
+     (add-to-list 'org-tempo-keywords-alist '("o" . "options"))
+     (add-to-list 'org-tempo-keywords-alist '("ti" . "title"))
+   #+end_src
+
+** org-superstar
+   #+begin_src emacs-lisp 
+     (use-package org-superstar
+       ;; :if (not dw/is-termux)
+       :after org
+       :hook (org-mode . org-superstar-mode)
+       :custom
+       (org-superstar-remove-leading-stars t)
+       (org-superstar-headline-bullets-list '("◉" "○" "●" "○" "●" "○" "●")))
+   #+end_src
+
+** load org-tempo for begin_src 
+   #+begin_src emacs-lisp
+     (require 'org-tempo)
+   #+end_src
+
+** babel
+   #+BEGIN_SRC emacs-lisp
+     (org-babel-do-load-languages
+       'org-babel-load-languages
+       '((emacs-lisp . t)
+	 (calc . t)
+	 (R . t)))
+   #+END_SRC
+
+** init
+   #+BEGIN_SRC emacs-lisp
+     (setq org-export-with-sub-superscripts nil)
+   #+END_SRC
+
+** reveal
+#+BEGIN_SRC emacs-lisp
+  (use-package org-re-reveal)
+    ;; :init (setq org-reveal-root "http://cdn.jsdelivr.net/reveal.js/3.0.0/"
+    ;; 	      org-reveal-mathjax t)
+#+END_SRC
+
+** htmlize
+   #+begin_src emacs-lisp 
+     (use-package htmlize)
+   #+end_src
+
+* ob-eshell
+  #+begin_src emacs-lisp
+    ;; (use-package ob-eshell)
+  #+end_src
+* flycheck
+#+BEGIN_SRC emacs-lisp
+  (setq bloomycat/do-nothing nil)
+  ;; (use-package flycheck)
+#+END_SRC
+
+* exec-path-from-shell
+#+begin_src emacs-lisp 
+  (use-package exec-path-from-shell
+    :init (exec-path-from-shell-initialize))
+#+end_src
+
+* python
+  #+BEGIN_SRC emacs-lisp
+    (setq bloomycat/do-nothing nil)
+    ;; (use-package python
+    ;;   :init (setq python-shell-interpreter "/usr/local/bin/python3"))
+  #+END_SRC
+
+* jedi
+  #+begin_src emacs-lisp 
+    (setq bloomycat/do-nothing nil)
+    ;; (use-package jedi
+    ;;   :init
+    ;;   (add-hook 'python-mode-hook 'jedi:setup)
+    ;;   (add-hook 'python-mode-hook 'jedi:ac-setup))
+  #+end_src
+
+* +company+
+  #+BEGIN_SRC emacs-lisp
+    (setq bloomycat/do-nothing nil)
+    ;; (use-package company
+    ;;   :init (global-company-mode)
+    ;;   :config
+    ;;   (setq company-idle-delay 0
+    ;; 	company-show-numbers "on")) 
+  #+END_SRC
+
+* yasnippet
+  #+BEGIN_SRC emacs-lisp
+    (use-package yasnippet
+      :init (yas-global-mode t)
+      :bind (:map yas-minor-mode-map
+                  ("TAB" . nil)
+                  ("<tab>" . nil)
+                  ("M-i" . yas-expand)
+                  ("C-c TAB" . yas-expand)
+                  ("M-i" . yas-expand))
+      :config
+      (use-package yasnippet-snippets)
+      (add-to-list 'yas-snippet-dirs "~/.emacs.d/snippets")
+      (yas-reload-all))
+  #+END_SRC
+
+* +elisp-lint+
+  #+BEGIN_SRC emacs-lisp
+    (setq bloomycat/do-nothing nil)
+    ;; (use-package elisp-lint
+    ;;   :init
+  #+END_SRC
+
+* ob-diagram
+  #+BEGIN_SRC emacs-lisp
+    (setq bloomycat/do-nothing nil)
+    ;; (use-package ob-diagrams
+    ;;   )
+  #+END_SRC
+
+* smtpmail
+  #+BEGIN_SRC emacs-lisp
+    (use-package smtpmail
+      :requires gnutls
+      :init (setq send-mail-function 'smtpmail-send-it
+		  message-send-mail-function 'smtpmail-send-it
+		  user-mail-address "bloomycat@gmail.com"
+		  smtpmail-starttls-credentials '(("smtp.gmail.com" "587" nil nil))
+		  smtpmail-auth-credentials (expand-file-name "~/.authinfo")
+		  smtpmail-default-smtp-server "smtp.gmail.com"
+		  smtpmail-smtp-server "smtp.gmail.com"
+		  smtpmail-smtp-service 587
+		  smtpmail-debug-info t
+		  authinfo-default-smtp-server "smtp.gmail.com"
+		  starttls-gnutls-program "/usr/local/bin/gnutls-cli"
+		  starttls-extra-arguments nil
+		  starttls-use-gnutls t))
+  #+END_SRC
+
+* gnus - gmail
+  #+BEGIN_SRC emacs-lisp
+    (use-package gnus
+      :init (setq gnus-select-method '(nnimap "gmail"
+					      (nnimap-address "imap.gmail.com")
+					      (nnimap-server-port "imaps")
+					      (nnimap-stream ssl)
+					      (nnmail-expiry-target "nnimap+gmail:[Gmail]/Trash")
+					      (nnmail-expiry-wait immediate))))
+  #+END_SRC
+
+* fix-emacs-permission-catalina
+  #+BEGIN_SRC emacs-lisp
+    ;; ;;; package --- Fix permissions for Emacs.app on macOS Catalina
+    ;; ;;; Author: Artem Loenko
+    ;; ;;; Mail-To: <artyom.loenko@mac.com>
+    ;; ;;; Commentary:
+    ;; ;;; Code:
+
+    ;; (defconst _default-emacs-app-plist-path "/Applications/Emacs.app/Contents/Info.plist")
+    ;; (defconst _temp-buffer-name "*fixing Emacs permissions*")
+    ;; (defconst _temp-buffer (get-buffer-create _temp-buffer-name))
+    ;; (with-current-buffer _temp-buffer (erase-buffer))
+
+    ;; (defun add-description-if-needed (description_key description)
+    ;;   "DESCRIPTION_KEY - DESCRIPTION."
+    ;;   (defconst read-args (list "read" _default-emacs-app-plist-path description_key))
+    ;;   (if (equal 1 (with-temp-buffer (apply 'call-process "defaults" nil (current-buffer) nil read-args)))
+    ;;       (progn
+    ;; 	(princ (format "Missing: %s. Adding...\n" description_key) _temp-buffer)
+    ;; 	(defconst write-args (list "write" _default-emacs-app-plist-path description_key "-string" description))
+    ;; 	(apply 'call-process "defaults" nil (current-buffer) nil write-args))
+    ;;     (princ (format "Existed: %s. Skipping.\n" description_key) _temp-buffer)))
+
+    ;; (add-description-if-needed
+    ;;  "NSDesktopFolderUsageDescription"
+    ;;  "Emacs requires permission to access the Desktop folder.")
+    ;; (add-description-if-needed
+    ;;  "NSDocumentsFolderUsageDescription"
+    ;;  "Emacs requires permission to access the Documents folder.")
+    ;; (add-description-if-needed
+    ;;  "NSDownloadsFolderUsageDescription"
+    ;;  "Emacs requires permission to access the Downloads folder.")
+    ;; (add-description-if-needed
+    ;;  "NSRemovableVolumesUsageDescription"
+    ;;  "Emacs requires permission to access files on Removable Volumes.")
+
+    ;; (switch-to-buffer-other-window _temp-buffer)
+
+    ;; ;;; fix-emacs-permissions-catalina.el ends here
+
+  #+END_SRC
+
+* deft
+  #+BEGIN_SRC emacs-lisp
+    (use-package deft
+      :config (setq-default deft-directory "~/Documents/org"
+			    deft-use-filename-as-title t)
+      :bind ("<f9>" . deft))
+  #+END_SRC
+
+* dired  
+  #+BEGIN_SRC emacs-lisp
+    (use-package dired
+      :ensure nil
+      :commands (dired dired-jump dired-jump-other-window)
+      :bind (("C-x C-j" . dired-jump)
+             ("C-x 4 C-j" . dired-jump-other-window)
+             :map dired-mode-map
+             ("b" . bookmark-jump)
+             ("j" . dired-up-directory)
+             ("J" . dired-goto-file)
+             ("C-c e" . bc/eshell-cd-from-dired)
+             ;; ("<M-C-return>" . bloomycat/dired-open-with-yacreader)
+             ;; ("<S-return>" . bloomycat/dired-open-with-vlc)
+             ;; ("<M-return>" . haba/dired-open-in-os)
+             ;; ("<C-return>" . haba/dired-open-with-quicktime)
+             )
+      :config (add-hook 'dired-mode-hook (lambda () (dired-hide-details-mode 1))) ; start in brief mode
+      (setq large-file-warning-threshold 9000000000)
+      (setq dired-dwim-target t)
+      (setq insert-directory-program "/usr/local/bin/gls")
+      (add-hook 'dired-mode-hook
+                (lambda ()
+                  (interactive)
+                  (dired-omit-mode 1)
+                  (dired-hide-details-mode 1)
+                  (all-the-icons-dired-mode 1)
+                  (hl-line-mode 1)))
+      (defun haba/dired-open-in-os ()
+        "Open file/folder under cursor in OS."
+        (interactive)
+        (let ((file (ignore-errors (dired-get-file-for-visit))))
+          (browse-url (file-truename file))))
+      (defun bloomycat/dired-open-with-vlc ()
+        "Open file/folder under cursor with VLC."
+        (interactive)
+        (let 
+            ((file (ignore-errors (dired-get-file-for-visit))))
+          (shell-command (concat "open -a \"VLC\"" " " (shell-quote-argument file) " &"))))
+      (defun bloomycat/dired-open-with-yacreader ()
+        "Open file/folder under cursor with YACReader."
+        (interactive)
+        (let 
+            ((file (ignore-errors (dired-get-file-for-visit))))
+          (shell-command (concat "open -a \"YACReader\"" " " (shell-quote-argument file) " &"))))
+      (defun haba/dired-open-with-quicktime ()
+        "Open file/folder under cursor with QuickTime."
+        (interactive)
+        (let 
+            ((file (ignore-errors (dired-get-file-for-visit))))
+          (shell-command (concat "open -a \"quicktime player\"" " " (shell-quote-argument file) " &"))))
+      (defun bc/eshell-cd-from-dired ()
+        "*eshell* 디렉토리를 사용중인 dired 의 디렉토리로 바꾼다."
+        (interactive)
+        (setq bc-dired-directory default-directory)
+        (message "changing eshell directory to \"%s\"" bc-dired-directory)
+        (with-current-buffer "*eshell*" (progn (eshell/cd bc-dired-directory)
+                                               (eshell-send-input)))))
+  #+END_SRC
+
+** all-the-icons
+   #+begin_src emacs-lisp
+     (use-package all-the-icons-dired)
+   #+end_src
+
+** dired-single
+   #+begin_src emacs-lisp
+     (use-package dired-single
+       :defer t
+       :after dired
+       :bind (:map dired-mode-map
+                   (
+                    ([remap dired-find-file]                    . 'dired-single-buffer)
+                    ([remap dired-mouse-find-file-other-window] . 'dired-single-buffer-mouse)
+                    ([remap dired-up-directory]                 . 'dired-single-up-directory))))
+   #+end_src
+
+** dired-quick-sort
+#+BEGIN_SRC emacs-lisp
+  (use-package dired-quick-sort
+    :init (dired-quick-sort-setup))
+#+END_SRC
+
+** dired-hide-dotfiles
+#+BEGIN_SRC emacs-lisp
+  (use-package dired-hide-dotfiles
+    :init (defun my-dired-mode-hook ()
+            "My `dired' mode hook."
+            ;; To hide dot-files by default
+            (dired-hide-dotfiles-mode)
+
+            ;; To toggle hiding
+            (define-key dired-mode-map "." #'dired-hide-dotfiles-mode))
+
+    (add-hook 'dired-mode-hook #'my-dired-mode-hook))
+#+END_SRC
+
+* openwith 
+   #+BEGIN_SRC emacs-lisp
+     (use-package openwith
+       :after dired
+       :config (setq openwith-associations
+                     (list
+                      (list (openwith-make-extension-regexp '("mpg" "mpeg" "mp3" "mp4" "mov"))
+                            "open -a \"QuickTime Player\""
+                            '(file))
+                      (list (openwith-make-extension-regexp '("avi" "wmv" "wav"  "flv"
+                                                              "ogm" "ogg" "mkv"))
+                            "mpv"
+                            '(file))))
+       :init (openwith-mode t))
+   #+END_SRC
+
+* dictionary
+  #+BEGIN_SRC emacs-lisp
+    (use-package dictionary
+      :init (progn
+	      (global-set-key "\C-cs" 'dictionary-search)
+	      (global-set-key "\C-cm" 'dictionary-match-words)))
+  #+END_SRC  
+
+* eshell
+  #+BEGIN_SRC emacs-lisp
+    ;; Change the default eshell prompt
+    (use-package eshell
+      :hook (eshell-mode . bc/eshell-mode-hook)
+      ;; :bind (:map ivy-minibuffer-map
+      ;;             ("M-n" . nil)
+      ;;             ("M-p" . nil))
+      :config
+      (defun bc/eshell-mode-hook ()
+        "eshll mode hook for key bindings"
+        (interactive "P")
+        (define-key eshell-mode-map (kbd "C-c C-l") 'counsel-esh-history)
+        (define-key eshell-mode-map (kbd "<tab>") 'complete-symbol))
+      (setq eshell-highlight-prompt nil
+            eshell-history-size 10000
+            eshell-buffer-maximum-lines 10000
+            eshell-hist-ignoredups t
+            eshell-highlight-prompt t
+            eshell-banner-message "")
+      (setq eshell-prompt-function 
+            (lambda ()
+              (concat "\n╭─── "
+                      (propertize (eshell/pwd) 'face '(:foreground "green4")) " "
+                      (propertize (getenv "USER") 'face '(:foreground "grey")) 
+                      (propertize "@" 'face ' (:foreground "grey"))
+                      (propertize (system-name) 'face ' (:foreground "grey"))
+                      "\n╰─ "
+                      (if (= (user-uid) 0) "# " "$ ")))))
+  #+END_SRC
+
+** eshell user function - eshell/format-commas
+   #+begin_src emacs-lisp
+     ;; 1000 단위 숫자에 콤마(","를 붙인다.
+     ;;   사용법: eshell/format-commas 12345
+     ;;   결과: 12,345
+     (defun eshell/format-commas (a)
+       (cl-format nil "~:d" (truncate a)))
+   #+end_src
+
+* json mode
+  #+BEGIN_SRC emacs-lisp
+    ;; json mode
+    ;; (use-package json-mode
+  #+END_SRC
+
+* newsticker
+  #+begin_src emacs-lisp
+    (use-package newsticker
+      :config (progn
+		(setq newsticker-url-list '(("미디어오늘" "http://www.mediatoday.co.kr/rss/allArticle.xml" nil nil nil)
+					    ("한겨레신문" "http://www.hani.co.kr/rss" nil nil nil)
+					    ("경향신문" "http://www.khan.co.kr/rss/rssdata/total_news.xml" nil nil nil)
+					    ("시사인" "http://www.sisain.co.kr/rss.xml" nil nil nil)
+					    ("민중의소리" "http://www.vop.co.kr/rss/" nil nil nil)
+					    ("오마이뉴스" "http://rss.ohmynews.com/rss/ohmynews.xml" nil nil nil)))))
+  #+end_src
+
+* eww as default browser - browse-url-browser-function
+  #+begin_src emacs-lisp
+    (setq browse-url-browser-function 'eww-browse-url)
+  #+end_src
+
+* doom modeline
+  #+begin_src emacs-lisp
+    (use-package shrink-path)
+    (use-package doom-modeline
+      :after shrink-path
+      :config (doom-modeline-mode 1)
+      :custom ((doom-modeline-height 15)))
+  #+end_src
+
+* all-the-icons
+  #+begin_src emacs-lisp
+    (use-package all-the-icons)
+  #+end_src
+
+* all-the-icons-ivy
+  #+begin_src emacs-lisp
+    (use-package all-the-icons-ivy)
+  #+end_src
+
+* all-the-icons-ivy-rich
+  #+begin_src emacs-lisp
+    (use-package all-the-icons-ivy-rich)
+  #+end_src
+
+* whiteboard theme
+  #+begin_src emacs-lisp
+    ;; (load-theme 'whiteboard)
+
+  #+end_src
+
+* quelpa
+  #+begin_src emacs-lisp
+    (use-package quelpa
+      :init
+      (setq quelpa-self-upgrade-p nil))
+
+    (use-package quelpa-use-package
+      :after (quelpa)
+      :config
+      (quelpa-use-package-activate-advice))
+  #+end_src
+
+** bookmark-plus - quelpa
+   #+begin_src emacs-lisp
+     (use-package bookmark+
+       :quelpa (bookmark+ :fetcher github :repo "emacsmirror/bookmark-plus")
+       :config (progn (setq bmkp-other-window-pop-to-flag nil))
+       ;; :after bookmark ; I have generic bookmark customization I want loaded beforehand, you might not need this
+       ;; [...] your :init and :config
+       )
+     ;; modify bookmark-bmenu-list behavior
+     (defun bmkp-bmenu-list-1 (filteredp reset-p interactivep)
+       "Helper for `bookmark-bmenu-list'.
+     See `bookmark-bmenu-list' for the description of FILTEREDP.
+     Reset `bmkp-modified-bookmarks' and `bmkp-flagged-bookmarks'.
+     Non-nil RESET-P means reset `bmkp-bmenu-marked-bookmarks' also.
+     Non-nil INTERACTIVEP means `bookmark-bmenu-list' was called
+      interactively, so pop to bookmark list and communicate sort order."
+       (setq bmkp-modified-bookmarks  ()
+	     bmkp-flagged-bookmarks   ())
+       (when reset-p (setq bmkp-bmenu-marked-bookmarks  ()))
+       ;; $$$$$$ Took out 2015/01/22. (unless filteredp (setq bmkp-latest-bookmark-alist  bookmark-alist))
+       (if interactivep
+	   (let ((one-win-p  (one-window-p)))
+	     (pop-to-buffer-same-window (get-buffer-create bookmark-bmenu-buffer)) ; 현재창에서 파일을 연다
+	     (when one-win-p (delete-other-windows)))
+	 (set-buffer (get-buffer-create bookmark-bmenu-buffer)))
+       (let* ((inhibit-read-only       t)
+	      (title                   (if (and filteredp bmkp-bmenu-title  (not (equal "" bmkp-bmenu-title)))
+					   bmkp-bmenu-title
+					 "All Bookmarks"))
+	      (show-image-file-icon-p  (and (fboundp 'display-images-p)  (display-images-p)
+					    bmkp-bmenu-image-bookmark-icon-file
+					    (file-readable-p bmkp-bmenu-image-bookmark-icon-file))))
+	 (erase-buffer)
+	 (when (fboundp 'remove-images) (remove-images (point-min) (point-max)))
+	 (insert (format "%s\n%s\n" title (make-string (length title) ?-)))
+	 (add-text-properties (point-min) (point) (bmkp-face-prop 'bmkp-heading))
+	 (goto-char (point-min))
+	 (insert (format "Bookmark file:\n%s\n\n" bmkp-current-bookmark-file))
+	 (forward-line bmkp-bmenu-header-lines)
+	 (let ((max-width  0)
+	       name markedp flaggedp tags annotation temporaryp start)
+	   (setq bmkp-sorted-alist  (bmkp-sort-omit bookmark-alist
+						    (and (not (eq bmkp-bmenu-filter-function
+								  'bmkp-omitted-alist-only))
+							 bmkp-bmenu-omitted-bookmarks)))
+	   (dolist (bmk  bmkp-sorted-alist)
+	     (setq max-width  (max max-width (string-width (bmkp-bookmark-name-from-record bmk)))))
+	   (setq max-width  (+ max-width bmkp-bmenu-marks-width))
+	   (dolist (bmk  bmkp-sorted-alist)
+	     (setq name        (bmkp-bookmark-name-from-record bmk)
+		   markedp     (bmkp-marked-bookmark-p bmk)
+		   flaggedp    (bmkp-flagged-bookmark-p bmk)
+		   tags        (bmkp-get-tags bmk)
+		   annotation  (bookmark-get-annotation bmk)
+		   start       (+ bmkp-bmenu-marks-width (point)))
+	     (cond (flaggedp (insert "D") (put-text-property (1- (point)) (point) 'face 'bmkp-D-mark))
+		   (markedp  (insert ">") (put-text-property (1- (point)) (point) 'face 'bmkp->-mark))
+		   (t        (insert " ")))
+	     (if (null tags)
+		 (insert " ")
+	       (insert "t") (put-text-property (1- (point)) (point) 'face 'bmkp-t-mark))
+	     (cond ((bmkp-temporary-bookmark-p bmk)
+		    (insert "X") (put-text-property (1- (point)) (point) 'face 'bmkp-X-mark))
+		   ((and annotation  (not (string-equal annotation "")))
+		    (insert "a") (put-text-property (1- (point)) (point) 'face 'bmkp-a-mark))
+		   (t (insert " ")))
+	     (if (not (memq bmk bmkp-modified-bookmarks))
+		 (insert " ")
+	       (insert "*")
+	       (put-text-property (1- (point)) (point) 'face 'bmkp-*-mark))
+	     (when (and (featurep 'bookmark+-lit)  (bmkp-get-lighting bmk)) ; Highlight highlight overrides.
+	       (put-text-property (1- (point)) (point) 'face 'bmkp-light-mark))
+	     (when (and (bmkp-image-bookmark-p bmk)  show-image-file-icon-p)
+	       (let ((image  (create-image bmkp-bmenu-image-bookmark-icon-file nil nil :ascent 95)))
+		 (when image (put-image image (point)))))
+	     (insert name)
+	     (move-to-column max-width t)
+	     (bmkp-bmenu-propertize-item bmk start (point))
+	     (insert "\n")))
+	 (goto-char (point-min)) (forward-line bmkp-bmenu-header-lines)
+	 (bookmark-bmenu-mode)
+	 (when (and bookmark-alist  bookmark-bmenu-toggle-filenames)
+	   (bookmark-bmenu-toggle-filenames t 'NO-MSG-P))
+	 (when (and (fboundp 'fit-frame-if-one-window)
+		    (eq (selected-window) (get-buffer-window (get-buffer-create bookmark-bmenu-buffer) 0)))
+	   (fit-frame-if-one-window)))
+       (when (fboundp 'bmkp-bmenu-mode-line) (bmkp-bmenu-mode-line))
+       (when (and interactivep  bmkp-sort-comparer) (bmkp-msg-about-sort-order (bmkp-current-sort-order))))
+   #+end_src
+
+* eww - related to gnutls version problem
+  #+begin_src emacs-lisp
+    (use-package eww
+      :config
+      (setq gnutls-algorithm-priority "NORMAL:-VERS-TLS1.3"))
+  #+end_src
+
+* google 번역
+  #+begin_src emacs-lisp
+    (use-package google-translate
+      :config (progn
+		(defun google-translate--search-tkk () "Search TKK." (list 430675 2721866130)) ; google-translate--search-tkk 함수에 버그가 있음.  
+		(require 'google-translate-smooth-ui)
+		(setq google-translate-default-source-language "en")
+		(setq google-translate-default-target-language "ko")
+		(global-set-key "\C-ct" 'google-translate-at-point)
+		(global-set-key "\C-cT" 'google-translate-query-translate)))
+  #+end_src
+
+* helpful mode
+  #+begin_src emacs-lisp
+    (use-package helpful
+      :custom
+      (counsel-describe-function-function #'helpful-callable)
+      (counsel-describe-variable-function #'helpful-variable)
+      :bind
+      ([remap describe-function] . counsel-describe-function)
+      ([remap describe-command] . helpful-command)
+      ([remap describe-variable] . counsel-describe-variable)
+      ([remap describe-key] . helpful-key))
+
+  #+end_src
+
+* doom theme
+  #+begin_src emacs-lisp
+    (use-package doom-themes
+      :init
+      (load-theme 'doom-one-light t)
+      ;; (load-theme 'doom-dracula t)
+      )
+  #+end_src
+
+* vimrc 모드
+  #+begin_src emacs-lisp
+    (use-package vimrc-mode
+      :config (progn (add-to-list 'auto-mode-alist '("\\.vim\\(rc\\)?\\'" . vimrc-mode))
+		     (add-to-list 'auto-mode-alist '("viebrc\\'" . vimrc-mode))))
+  #+end_src
+
+* command log mode
+  #+begin_src emacs-lisp 
+    (use-package command-log-mode
+      :commands (command-log-mode))
+  #+end_src
+
+* automatically tangle on save
+  #+begin_src emacs-lisp
+    ;; Since we don't want to disable org-confirm-babel-evaluate all
+    ;; of the time, do it around the after-save-hook
+    (setq bc/do-nothing nil)
+    (defun bc/org-babel-tangle-dont-ask ()
+      ;; Dynamic scoping to the rescue
+      (let ((org-confirm-babel-evaluate nil))
+        (org-babel-tangle)))
+
+    (add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'bc/org-babel-tangle-dont-ask
+                                                  'run-at-end 'only-in-org-mode)))
+  #+end_src
+
+* vterm
+  #+begin_src emacs-lisp
+    (use-package vterm
+      :commands vterm
+      :config
+      (setq vterm-max-scrollback 10000))
+  #+end_src
+* keycast
+  #+begin_src emacs-lisp
+    (use-package keycast
+      :config
+      ;; This works with doom-modeline, inspired by this comment:
+      ;; https://github.com/tarsius/keycast/issues/7#issuecomment-627604064
+      (with-eval-after-load 'keycast
+        (define-minor-mode keycast-mode
+          "Show current command and its key binding in the mode line."
+          :global t
+          (if keycast-mode
+              (add-hook 'pre-command-hook 'keycast--update t)
+            (remove-hook 'pre-command-hook 'keycast--update)))
+        (add-to-list 'global-mode-string '("" mode-line-keycast)))
+      (setq keycast-window-predicate 'selected-window))
+  #+end_src
+
+* gemini 
+  #+begin_src emacs-lisp
+    (use-package elpher)
+  #+end_src
