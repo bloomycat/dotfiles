@@ -1051,3 +1051,8 @@
   #+begin_src emacs-lisp
     (use-package elpher)
   #+end_src
+
+* json, 제이슨
+#+begin_src emacs-lisp
+  (use-package json-mode)
+#+end_src
